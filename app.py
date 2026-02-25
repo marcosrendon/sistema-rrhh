@@ -58,36 +58,57 @@ def calcular_puntaje(experiencia, agro, negociacion, disponibilidad):
 def formulario():
     return render_template("index.html")
 
-
-# ===============================
-# GUARDAR POSTULACIÓN
+   # ===============================
+# GUARDAR POSTULACIÓN (VERSIÓN CORREGIDA)
 # ===============================
 @app.route("/guardar", methods=["POST"])
 def guardar():
-    nombre = request.form["nombre"]
-    experiencia = int(request.form["experiencia"])
-    agro = request.form["agro"]
-    negociacion = int(request.form["negociacion"])
-    disponibilidad = request.form["campo"]
-    tecnica = request.form["tecnica"]
+    try:
+        # 1. Usamos .get() para evitar que la app explote si un dato llega vacío
+        nombre = request.form.get("nombre", "Sin nombre")
+        
+        # 2. Validamos que los números no rompan la aplicación
+        experiencia_str = request.form.get("experiencia", "0")
+        experiencia = int(experiencia_str) if experiencia_str.isdigit() else 0
+        
+        agro = request.form.get("agro", "no")
+        
+        negociacion_str = request.form.get("negociacion", "1")
+        negociacion = int(negociacion_str) if negociacion_str.isdigit() else 1
+        
+        disponibilidad = request.form.get("campo", "ciudad")
+        tecnica = request.form.get("tecnica", "Ninguna")
 
-    puntaje = calcular_puntaje(experiencia, agro, negociacion, disponibilidad)
+        # Calculamos el puntaje
+        puntaje = calcular_puntaje(experiencia, agro, negociacion, disponibilidad)
 
-    conn = sqlite3.connect("rrhh.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO postulantes 
-        (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje))
-    conn.commit()
-    conn.close()
+        # 3. Agregamos timeout por si Render tarda en abrir el archivo SQLite
+        conn = sqlite3.connect("rrhh.db", timeout=15)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO postulantes 
+            (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje))
+        conn.commit()
+        conn.close()
 
-    return f"""
-    <h2>Postulación enviada correctamente ✅</h2>
-    <h3>Puntaje obtenido: {puntaje}</h3>
-    <a href="/">Volver</a>
-    """
+        return f"""
+        <h2>Postulación enviada correctamente ✅</h2>
+        <h3>Puntaje obtenido: {puntaje}</h3>
+        <br>
+        <a href="/">Volver al inicio</a>
+        """
+    
+    except Exception as e:
+        # 4. Red de seguridad: Muestra el error exacto en pantalla en vez del Error 500 genérico
+        return f"""
+        <h2>Error al guardar en la base de datos 🚨</h2>
+        <p>El servidor de Render bloqueó la acción por este motivo:</p>
+        <p style="color:red; font-weight:bold;">{str(e)}</p>
+        <br>
+        <a href="/">Volver a intentar</a>
+        """, 500
 
 
 # ===============================
@@ -125,4 +146,5 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=port)
 
     
+
 

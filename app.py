@@ -119,9 +119,5 @@ def admin():
     return resultado
 
 
-# ===============================
-# GENERAR QR
-# ===============================
-if __name__ == "__main__":
-    # NO pongas app.run aquí
+
     

@@ -4,7 +4,7 @@ import sqlite3
 app = Flask(__name__)
 
 # ===============================
-# CREAR BASE DE DATOS (CON LAS NUEVAS PREGUNTAS)
+# CREAR BASE DE DATOS (NUEVA ESTRUCTURA)
 # ===============================
 def init_db():
     conn = sqlite3.connect("rrhh.db")
@@ -14,6 +14,7 @@ def init_db():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombres TEXT,
         apellidos TEXT,
+        celular TEXT, 
         fecha_nacimiento TEXT,
         ciudad TEXT,
         estudios TEXT,
@@ -69,9 +70,9 @@ def formulario():
 @app.route("/guardar", methods=["POST"])
 def guardar():
     try:
-        # Usamos .get() para evitar caídas del servidor si un dato falta
         nombres = request.form.get("nombres", "Sin nombre")
         apellidos = request.form.get("apellidos", "")
+        celular = request.form.get("celular", "")
         fecha_nacimiento = request.form.get("fecha_nacimiento", "")
         ciudad = request.form.get("ciudad", "")
         estudios = request.form.get("estudios", "Primario")
@@ -84,14 +85,13 @@ def guardar():
 
         puntaje = calcular_puntaje(estudios, salario, licencia, ventas, excel, disponibilidad, tecnica)
 
-        # timeout=15 ayuda a evitar errores de base de datos bloqueada en Render
         conn = sqlite3.connect("rrhh.db", timeout=15)
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO postulantes 
-            (nombres, apellidos, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (nombres, apellidos, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje))
+            (nombres, apellidos, celular, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (nombres, apellidos, celular, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje))
         conn.commit()
         conn.close()
 
@@ -140,19 +140,21 @@ def admin():
             es_el_mejor = "<span style='background-color: gold; color: black; padding: 4px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; font-weight: bold;'>👑 MEJOR CANDIDATO</span>"
             estilo_borde = "border: 3px solid gold; background-color: #fffdf0;"
 
+        # Nota: Con la nueva columna, el celular es d[3] y el puntaje pasó a ser d[13]
         resultado += f"""
         <div style="{estilo_borde} padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h3 style="margin: 0; color: #333; font-size: 1.5rem;">#{index + 1} - {d[1]} {d[2]} {es_el_mejor}</h3>
-                <h4 style="margin: 0; color: white; background-color: #2e7d32; padding: 8px 15px; border-radius: 5px;">{d[12]} / 110 pts</h4>
+                <h4 style="margin: 0; color: white; background-color: #2e7d32; padding: 8px 15px; border-radius: 5px;">{d[13]} / 110 pts</h4>
             </div>
             
             <div style="font-size: 15px; line-height: 1.8; color: #555; background: white; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-                <strong>📍 Origen:</strong> {d[4]} | <strong>🎂 Nacimiento:</strong> {d[3]}<br>
-                <strong>🎓 Estudios:</strong> {d[5]} | <strong>💰 Salario Esperado:</strong> {d[6]} Bs.<br>
-                <strong>💼 Exp. Ventas:</strong> {d[8]} | <strong>🚗 Licencia:</strong> {d[7]}<br>
-                <strong>📊 Nivel Excel:</strong> {d[9]} | <strong>⏰ Disponibilidad:</strong> {d[10]}<br>
-                <strong>🌱 Conocimiento Agro:</strong> <span style="font-style: italic;">"{d[11]}"</span>
+                <strong>📱 Celular:</strong> <a href="https://wa.me/591{d[3]}" target="_blank" style="color: #2e7d32; font-weight: bold; text-decoration: none;">+591 {d[3]}</a> (Clic para WhatsApp)<br>
+                <strong>📍 Origen:</strong> {d[5]} | <strong>🎂 Nacimiento:</strong> {d[4]}<br>
+                <strong>🎓 Estudios:</strong> {d[6]} | <strong>💰 Salario Esperado:</strong> {d[7]} Bs.<br>
+                <strong>💼 Exp. Ventas:</strong> {d[9]} | <strong>🚗 Licencia:</strong> {d[8]}<br>
+                <strong>📊 Nivel Excel:</strong> {d[10]} | <strong>⏰ Disponibilidad:</strong> {d[11]}<br>
+                <strong>🌱 Conocimiento Agro:</strong> <span style="font-style: italic;">"{d[12]}"</span>
             </div>
         </div>
         """

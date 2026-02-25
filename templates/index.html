@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Postulación - Agromel SRL</title>
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -8,56 +9,112 @@
 <body>
 
 <div class="overlay">
-    <div class="container">
+    <div class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                      <div class="text-center mb-3">
-                          <img src="/static/logo.png" width="150">
-                           </div>
-                    <h2 class="text-center mb-4">
-                        Asesor de Ventas - Agromel SRL
-                    </h2>
+            <div class="col-md-8">
+                <div class="card shadow-lg">
+                    <div class="text-center mb-3">
+                        <img src="/static/logo.png" width="150" alt="Logo Agromel">
+                    </div>
+                    <h2 class="text-center mb-2" style="color: #2e7d32; font-weight: bold;">Asesor de Ventas - Agromel SRL</h2>
+                    
+                    <div class="alert alert-success text-center mb-4">
+                        <strong>Descripción del Puesto:</strong><br>
+                        Buscamos un Asesor de Ventas proactivo para unirse a nuestro equipo. 
+                        Serás responsable de la comercialización de insumos agropecuarios, 
+                        atención al cliente y expansión de cartera en zonas estratégicas.
+                    </div>
 
                     <form method="POST" action="/guardar">
-
-                        <div class="mb-3">
-                            <label>Nombre</label>
-                            <input name="nombre" class="form-control" required>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="fw-bold">Nombres</label>
+                                <input name="nombres" type="text" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold">Apellidos</label>
+                                <input name="apellidos" type="text" class="form-control" required>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label>Años de experiencia</label>
-                            <input name="experiencia" type="number" class="form-control" required>
+                            <label class="fw-bold">Fecha de Nacimiento (Solo mayores de edad)</label>
+                            <input name="fecha_nacimiento" type="date" class="form-control" max="2007-12-31" required>
                         </div>
 
                         <div class="mb-3">
-                            <label>Experiencia en insumos agropecuarios</label>
-                            <select name="agro" class="form-control">
-                                <option value="no">No</option>
-                                <option value="si">Sí</option>
+                            <label class="fw-bold">Ciudad de Residencia</label>
+                            <select name="ciudad" class="form-select" required>
+                                <option value="" disabled selected>Selecciona un departamento...</option>
+                                <option value="Beni">Beni</option>
+                                <option value="Chuquisaca">Chuquisaca</option>
+                                <option value="Cochabamba">Cochabamba</option>
+                                <option value="La Paz">La Paz</option>
+                                <option value="Oruro">Oruro</option>
+                                <option value="Pando">Pando</option>
+                                <option value="Potosí">Potosí</option>
+                                <option value="Santa Cruz">Santa Cruz</option>
+                                <option value="Tarija">Tarija</option>
                             </select>
                         </div>
 
                         <div class="mb-3">
-                            <label>Nivel de negociación (1-5)</label>
-                            <input name="negociacion" type="number" min="1" max="5" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Disponibilidad</label>
-                            <select name="campo" class="form-control">
-                                <option value="ciudad">Solo ciudad</option>
-                                <option value="provincias">Ciudad y provincias</option>
+                            <label class="fw-bold">Nivel de Estudio o Formación Académica</label>
+                            <select name="estudios" class="form-select" required>
+                                <option value="Primario">Primario</option>
+                                <option value="Secundario">Secundario</option>
+                                <option value="Estudios Superiores">Estudios Superiores</option>
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label>¿Qué productos agropecuarios conoce?</label>
-                            <textarea name="tecnica" class="form-control"></textarea>
+                        <div class="mb-3 bg-light p-3 border rounded">
+                            <label class="fw-bold">Expectativa Salarial (Bs)</label>
+                            <input name="salario" type="range" class="form-range" min="1000" max="5000" step="200" value="3000" id="rangoSalario" oninput="document.getElementById('valorSalario').innerText = this.value">
+                            <div class="text-center fw-bold text-success fs-5 mt-2">
+                                <span id="valorSalario">3000</span> Bs
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="fw-bold">¿Licencia de conducir?</label>
+                                <select name="licencia" class="form-select">
+                                    <option value="Si">Sí</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold">¿Experiencia en ventas?</label>
+                                <select name="ventas" class="form-select">
+                                    <option value="Si">Sí</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="fw-bold">Manejo de Excel</label>
+                                <select name="excel" class="form-select">
+                                    <option value="Basico">Básico</option>
+                                    <option value="Medio">Medio</option>
+                                    <option value="Experto">Experto</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold">Disponibilidad</label>
+                            <select name="campo" class="form-select">
+                                <option value="Solo ciudad">Solo ciudad</option>
+                                <option value="Ciudad y provincias">Ciudad y provincias</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="fw-bold">¿Qué productos agropecuarios conoce?</label>
+                            <textarea name="tecnica" class="form-control" rows="3" placeholder="Mencione herbicidas, fertilizantes, semillas, etc. (Opcional)"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold fs-5 py-2">
                             Enviar Postulación
                         </button>
 

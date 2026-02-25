@@ -1,12 +1,10 @@
 from flask import Flask, request, render_template
 import sqlite3
-import qrcode
-import socket
 
 app = Flask(__name__)
 
 # ===============================
-# CREAR BASE DE DATOS
+# CREAR BASE DE DATOS (CON LAS NUEVAS PREGUNTAS)
 # ===============================
 def init_db():
     conn = sqlite3.connect("rrhh.db")
@@ -14,10 +12,15 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS postulantes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        experiencia INTEGER,
-        agro TEXT,
-        negociacion INTEGER,
+        nombres TEXT,
+        apellidos TEXT,
+        fecha_nacimiento TEXT,
+        ciudad TEXT,
+        estudios TEXT,
+        salario INTEGER,
+        licencia TEXT,
+        ventas TEXT,
+        excel TEXT,
         disponibilidad TEXT,
         tecnica TEXT,
         puntaje INTEGER
@@ -29,91 +32,89 @@ def init_db():
 init_db()
 
 # ===============================
-# CALCULAR PUNTAJE AUTOMÁTICO
+# SISTEMA INTELIGENTE DE PUNTUACIÓN (110 pts)
 # ===============================
-def calcular_puntaje(experiencia, agro, negociacion, disponibilidad):
+def calcular_puntaje(estudios, salario, licencia, ventas, excel, disponibilidad, tecnica):
     puntaje = 0
 
-    # Experiencia general
-    puntaje += experiencia * 2
+    if estudios == "Estudios Superiores": puntaje += 20
+    elif estudios == "Secundario": puntaje += 10
+    elif estudios == "Primario": puntaje += 5
 
-    # Experiencia agro
-    if agro == "si":
+    if ventas == "Si": puntaje += 25
+    if licencia == "Si": puntaje += 15
+
+    if excel == "Experto": puntaje += 15
+    elif excel == "Medio": puntaje += 10
+    elif excel == "Basico": puntaje += 5
+
+    if disponibilidad == "Ciudad y provincias": puntaje += 15
+    elif disponibilidad == "Solo ciudad": puntaje += 5
+
+    if salario <= 2500: puntaje += 10
+    elif salario <= 3500: puntaje += 5
+
+    if len(tecnica.strip()) > 3: 
         puntaje += 10
-
-    # Negociación
-    puntaje += negociacion * 3
-
-    # Disponibilidad
-    if disponibilidad == "provincias":
-        puntaje += 5
 
     return puntaje
 
-
 # ===============================
-# FORMULARIO WEB
+# RUTAS DE LA APLICACIÓN
 # ===============================
 @app.route("/")
 def formulario():
     return render_template("index.html")
 
-   # ===============================
-# GUARDAR POSTULACIÓN (VERSIÓN CORREGIDA)
-# ===============================
 @app.route("/guardar", methods=["POST"])
 def guardar():
     try:
-        # 1. Usamos .get() para evitar que la app explote si un dato llega vacío
-        nombre = request.form.get("nombre", "Sin nombre")
-        
-        # 2. Validamos que los números no rompan la aplicación
-        experiencia_str = request.form.get("experiencia", "0")
-        experiencia = int(experiencia_str) if experiencia_str.isdigit() else 0
-        
-        agro = request.form.get("agro", "no")
-        
-        negociacion_str = request.form.get("negociacion", "1")
-        negociacion = int(negociacion_str) if negociacion_str.isdigit() else 1
-        
-        disponibilidad = request.form.get("campo", "ciudad")
-        tecnica = request.form.get("tecnica", "Ninguna")
+        # Usamos .get() para evitar caídas del servidor si un dato falta
+        nombres = request.form.get("nombres", "Sin nombre")
+        apellidos = request.form.get("apellidos", "")
+        fecha_nacimiento = request.form.get("fecha_nacimiento", "")
+        ciudad = request.form.get("ciudad", "")
+        estudios = request.form.get("estudios", "Primario")
+        salario = int(request.form.get("salario", "3000"))
+        licencia = request.form.get("licencia", "No")
+        ventas = request.form.get("ventas", "No")
+        excel = request.form.get("excel", "Basico")
+        disponibilidad = request.form.get("campo", "Solo ciudad")
+        tecnica = request.form.get("tecnica", "")
 
-        # Calculamos el puntaje
-        puntaje = calcular_puntaje(experiencia, agro, negociacion, disponibilidad)
+        puntaje = calcular_puntaje(estudios, salario, licencia, ventas, excel, disponibilidad, tecnica)
 
-        # 3. Agregamos timeout por si Render tarda en abrir el archivo SQLite
+        # timeout=15 ayuda a evitar errores de base de datos bloqueada en Render
         conn = sqlite3.connect("rrhh.db", timeout=15)
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO postulantes 
-            (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (nombre, experiencia, agro, negociacion, disponibilidad, tecnica, puntaje))
+            (nombres, apellidos, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (nombres, apellidos, fecha_nacimiento, ciudad, estudios, salario, licencia, ventas, excel, disponibilidad, tecnica, puntaje))
         conn.commit()
         conn.close()
 
         return f"""
-        <h2>Postulación enviada correctamente ✅</h2>
-        <h3>Puntaje obtenido: {puntaje}</h3>
-        <br>
-        <a href="/">Volver al inicio</a>
+        <div style="text-align: center; margin-top: 10vh; font-family: Arial, sans-serif;">
+            <h1 style="color: #2e7d32; font-size: 3rem;">✅</h1>
+            <h2 style="color: #2e7d32;">¡Postulación enviada exitosamente!</h2>
+            <p style="font-size: 1.2rem; margin-top: 20px;">Gracias <strong>{nombres}</strong>. Nuestro equipo de Recursos Humanos evaluará tu perfil.</p>
+            <br><br>
+            <a href="/" style="padding: 12px 25px; background-color: #2e7d32; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Volver al inicio</a>
+        </div>
         """
-    
     except Exception as e:
-        # 4. Red de seguridad: Muestra el error exacto en pantalla en vez del Error 500 genérico
         return f"""
-        <h2>Error al guardar en la base de datos 🚨</h2>
-        <p>El servidor de Render bloqueó la acción por este motivo:</p>
-        <p style="color:red; font-weight:bold;">{str(e)}</p>
-        <br>
-        <a href="/">Volver a intentar</a>
+        <div style="text-align: center; margin-top: 10vh; font-family: Arial, sans-serif;">
+            <h2 style='color:red;'>🚨 Error al guardar los datos</h2>
+            <p>El servidor dice:</p>
+            <p style='color:red; font-weight:bold;'>{str(e)}</p>
+            <br>
+            <a href="/">Volver a intentar</a>
+        </div>
         """, 500
 
-
-# ===============================
-# PANEL ADMINISTRADOR
-# ===============================
 @app.route("/admin")
 def admin():
     conn = sqlite3.connect("rrhh.db")
@@ -122,29 +123,39 @@ def admin():
     datos = cursor.fetchall()
     conn.close()
 
-    resultado = "<h2>Ranking de Postulantes - Asesor de Ventas</h2>"
-
-    for d in datos:
-        resultado += f"""
-        <p>
-        <strong>{d[1]}</strong><br>
-        Experiencia: {d[2]} años<br>
-        Agro: {d[3]}<br>
-        Negociación: {d[4]}<br>
-        Disponibilidad: {d[5]}<br>
-        Puntaje Total: <strong>{d[7]}</strong>
-        </p>
-        <hr>
-        """
-
-    return resultado
-
-import os
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
-
+    resultado = """
+    <div style="max-width: 900px; margin: 40px auto; font-family: Arial, sans-serif;">
+        <h2 style='color: #2e7d32; text-align: center; font-weight: bold;'>Panel de Selección - Agromel S.R.L.</h2>
+        <hr style="border: 2px solid #2e7d32; margin-bottom: 30px;">
+    """
     
+    if not datos:
+        return resultado + "<p style='text-align:center; font-size: 1.2rem;'>Aún no hay postulantes registrados.</p></div>"
 
+    for index, d in enumerate(datos):
+        es_el_mejor = ""
+        estilo_borde = "border: 1px solid #ccc; background-color: #fdfdfd;"
+        
+        if index == 0:
+            es_el_mejor = "<span style='background-color: gold; color: black; padding: 4px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; font-weight: bold;'>👑 MEJOR CANDIDATO</span>"
+            estilo_borde = "border: 3px solid gold; background-color: #fffdf0;"
 
+        resultado += f"""
+        <div style="{estilo_borde} padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0; color: #333; font-size: 1.5rem;">#{index + 1} - {d[1]} {d[2]} {es_el_mejor}</h3>
+                <h4 style="margin: 0; color: white; background-color: #2e7d32; padding: 8px 15px; border-radius: 5px;">{d[12]} / 110 pts</h4>
+            </div>
+            
+            <div style="font-size: 15px; line-height: 1.8; color: #555; background: white; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                <strong>📍 Origen:</strong> {d[4]} | <strong>🎂 Nacimiento:</strong> {d[3]}<br>
+                <strong>🎓 Estudios:</strong> {d[5]} | <strong>💰 Salario Esperado:</strong> {d[6]} Bs.<br>
+                <strong>💼 Exp. Ventas:</strong> {d[8]} | <strong>🚗 Licencia:</strong> {d[7]}<br>
+                <strong>📊 Nivel Excel:</strong> {d[9]} | <strong>⏰ Disponibilidad:</strong> {d[10]}<br>
+                <strong>🌱 Conocimiento Agro:</strong> <span style="font-style: italic;">"{d[11]}"</span>
+            </div>
+        </div>
+        """
+    
+    resultado += "</div>"
+    return resultado
